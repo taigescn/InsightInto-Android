@@ -1,11 +1,13 @@
 package com.taiges.insight.into.api
 
 import android.os.Build
+import android.os.SystemClock
 import android.util.AndroidRuntimeException
 import com.google.gson.reflect.TypeToken
 import com.taiges.insight.into.BuildConfig
 import com.taiges.insight.into.InsightConfig
 import com.taiges.insight.into.InsightInto
+import com.taiges.insight.into.InsightInto.Companion.DEF_L
 import com.taiges.insight.into.bean.ReaderResult
 import com.taiges.insight.into.bean.LocalConfig
 import com.taiges.insight.into.bean.LocalEventConfig
@@ -83,6 +85,8 @@ internal class ApiService(private val insightConfig: InsightConfig) {
     private val supplementCacheDataDelay = 15000L //补报数据间隔 15 秒
     private var supplementCacheDataTimer: Timer? = null
     private val eventUploadList = mutableListOf<String>()
+    private var elapsedRealtime = DEF_L
+    private var serverTimestamp = DEF_L
 
     /**
      * 获取
@@ -154,14 +158,25 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         body["eventTime"] = event.time.formatTime()
 //        timestamp  String  是  事件触发的时间戳
         body["eventTimestamp"] = event.time
-//        source  String  是  事件触发源平台
-        body["source"] = event.sdkSource
-//        type  String  是  事件类型,TRACK:埋点跟踪事件,INSIDE:内置事件
-        body["type"] = event.type
-//        uploadTime  String  是  采集数据上报时间戳
+//        eventSource  String  是  事件触发源平台
+        body["eventSource"] = event.sdkSource
+//        eventType  String  是  事件类型,TRACK:埋点跟踪事件,INSIDE:内置事件
+        body["eventType"] = event.type
+//        uploadTime  String  是  采集数据上报时间(yyyy-MM-dd HH:mm:ss.SSS)
         body["uploadTime"] = uploadTimestamp.formatTime()
 //        uploadTimestamp  String  是  采集时间戳
         body["uploadTimestamp"] = uploadTimestamp
+        var clientCalibrationtTimestamp = DEF_L
+        var clientCalibrationtTime = ""
+        if (serverTimestamp != DEF_L && elapsedRealtime != DEF_L) {
+            clientCalibrationtTimestamp =
+                serverTimestamp - (elapsedRealtime - event.elapsedRealtime)
+            clientCalibrationtTime = clientCalibrationtTimestamp.formatTime()
+        }
+//        clientCalibrationtTimestamp  String  是  终端校准时间(yyyy-MM-dd HH:mm:ss.SSS)
+        body["clientCalibrationtTimestamp"] = clientCalibrationtTimestamp
+//        clientCalibrationtTime  String  是  终端校准时间戳
+        body["clientCalibrationtTime"] = clientCalibrationtTime
 //        collectorItems  Json 数组  否  采集项列表 Json 数组，具体参数见数据示例
         body["collectorItems"] = readerResult.readerBaseInfo.readerItems
 //        userId  String  否  业务用户 Id，业务登录后必传
@@ -520,6 +535,9 @@ internal class ApiService(private val insightConfig: InsightConfig) {
                     throw AndroidRuntimeException("network error!")
                 }
 
+                //校准终端时间
+                calibrationServerTime(connection)
+
                 val type = object : TypeToken<BaseResult<T>>() {}.type
                 baseResult = GsonManager.gson.fromJson(response, type)
                 if (baseResult.isSuccess() || i >= uploadTryCount) {
@@ -559,5 +577,20 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         }
 
         return baseResult
+    }
+
+    private fun calibrationServerTime(connection: HttpURLConnection?) {
+        if (serverTimestamp == DEF_L || elapsedRealtime == DEF_L) {
+            connection?.apply {
+                headerFields?.also { headers ->
+                    tryI {
+                        headers["server-timestamp"]?.also {
+                            serverTimestamp = it[0].toLong()
+                            elapsedRealtime = SystemClock.elapsedRealtime()
+                        }
+                    }
+                }
+            }
+        }
     }
 }

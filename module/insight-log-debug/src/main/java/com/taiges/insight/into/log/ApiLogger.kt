@@ -11,7 +11,7 @@ import java.net.HttpURLConnection
  */
 open class ApiLogger : Logger {
 
-    private val tag = "NetLogger"
+    private val tag = "ApiLogger"
 
     override fun message(msg: String) {
     }

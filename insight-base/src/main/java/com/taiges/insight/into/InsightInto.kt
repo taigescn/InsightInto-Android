@@ -1,6 +1,7 @@
 package com.taiges.insight.into
 
 import android.content.Context
+import android.os.SystemClock
 import com.taiges.insight.into.bean.PermissionData
 import com.taiges.insight.into.common.ChannelBus
 import com.taiges.insight.into.common.log.ILog
@@ -164,6 +165,7 @@ class InsightInto private constructor(private val insightConfig: InsightConfig) 
         val properties: Map<String, Any> = mapOf(),
         val msgId: String = CommonUtil.createInsightUUID(),
         val time: Long = System.currentTimeMillis(),
+        val elapsedRealtime:Long = SystemClock.elapsedRealtime(),
         val sdkSource: String = CommonUtil.PLATFORM,
         var userId: String = "",
         var uniqueId: String = "",
