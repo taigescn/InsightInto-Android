@@ -1,5 +1,6 @@
 package com.taiges.insight.into.api
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.SystemClock
 import android.util.AndroidRuntimeException
@@ -281,7 +282,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
     private fun parseServerData(serverData: ServerData): LocalConfig {
         //1. 将服务端配置的事件与采集项展开
         val localEventConfigs = mutableListOf<LocalEventConfig>()
-        val supportReaderItems = insightConfig.getReaderService()?.supportReaderItems() ?: listOf()
+        val supportReaderItems = insightConfig.getReaderService().supportReaderItems()
         for (eventConfig in serverData.eventConfigs) {
             val configs =
                 LocalEventConfig.mapping(eventConfig, serverData.readerConfigs, supportReaderItems)
@@ -490,6 +491,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
     /**
      * 发起请求调用
      */
+    @SuppressLint("ObsoleteSdkInt")
     private inline fun <reified T> exceRequest(request: Request): BaseResult<T> {
         var baseResult: BaseResult<T> = BaseResult.createError("UnknownError")
         var connection: HttpURLConnection? = null
