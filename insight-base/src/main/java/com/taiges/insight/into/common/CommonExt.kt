@@ -13,14 +13,12 @@ import androidx.core.database.getStringOrNull
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import com.taiges.insight.into.common.log.ILog
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
 import java.io.Closeable
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import java.io.UnsupportedEncodingException
+import java.net.HttpURLConnection
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.text.SimpleDateFormat
@@ -222,13 +220,11 @@ internal fun InputStream.tryClose() {
 }
 
 /**
- * 协程执行捕获异常
+ * 尝试关闭 Http 连接
  */
-internal fun GlobalScope.launchTry(msg: String = "", block: suspend CoroutineScope.() -> Unit) {
-    launch {
-        tryI(msg) {
-            block.invoke(this)
-        }
+internal fun HttpURLConnection.tryDisconnect(){
+    tryI {
+        disconnect()
     }
 }
 

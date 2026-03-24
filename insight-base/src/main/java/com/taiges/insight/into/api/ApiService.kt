@@ -34,6 +34,7 @@ import com.taiges.insight.into.common.toInteger
 import com.taiges.insight.into.common.toSha256
 import com.taiges.insight.into.common.formatTime
 import com.taiges.insight.into.common.tryClose
+import com.taiges.insight.into.common.tryDisconnect
 import com.taiges.insight.into.common.tryI
 import java.io.*
 import java.net.HttpURLConnection
@@ -494,15 +495,14 @@ internal class ApiService(private val insightConfig: InsightConfig) {
     @SuppressLint("ObsoleteSdkInt")
     private inline fun <reified T> exceRequest(request: Request): BaseResult<T> {
         var baseResult: BaseResult<T> = BaseResult.createError("UnknownError")
-        var connection: HttpURLConnection? = null
-        var ops: OutputStream? = null
-        var inps: InputStream? = null
-        var code = InsightInto.DEF_INT
-        var response = ""
         val start = System.currentTimeMillis()
-        var exception: Exception? = null
-
         for (i in 1..uploadTryCount) {
+            var connection: HttpURLConnection? = null
+            var ops: OutputStream? = null
+            var inps: InputStream? = null
+            var code = InsightInto.DEF_INT
+            var response = ""
+            var exception: Exception? = null
             try {
                 if (insightConfig.debug) {
                     insightConfig.getLogger().request(request)
@@ -568,11 +568,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
 
                 inps?.tryClose()
                 ops?.tryClose()
-
-                try {
-                    connection?.disconnect()
-                } catch (_: Throwable) {
-                }
+                connection?.tryDisconnect()
             }
             //尝试 2 秒再上报事件
             Thread.sleep(2000)
