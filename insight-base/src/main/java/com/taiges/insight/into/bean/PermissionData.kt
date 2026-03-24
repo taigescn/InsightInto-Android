@@ -50,21 +50,21 @@ class PermissionData private constructor(
                     Manifest.permission.CAMERA -> {
                         hasCamera = isGranted
                         data["hasCamera"] = isGranted.toInteger()
-                        data["changeCamera"] = hasCamera != oldPermissionRecord.hasCamera
+                        data["changeCamera"] = (hasCamera != oldPermissionRecord.hasCamera).toInteger()
                     }
 
                     Manifest.permission.ACCESS_COARSE_LOCATION -> {
                         hasCoarseLocation = isGranted
                         data["hasCoarseLocation"] = isGranted.toInteger()
                         data["changeCoarseLocation"] =
-                            hasCoarseLocation != oldPermissionRecord.hasCoarseLocation
+                            (hasCoarseLocation != oldPermissionRecord.hasCoarseLocation).toInteger()
                     }
 
                     "android.permission.POST_NOTIFICATIONS" -> {
                         hasNotifications = isGranted
                         data["hasNotifications"] = isGranted.toInteger()
                         data["changeNotifications"] =
-                            hasNotifications != oldPermissionRecord.hasNotifications
+                            (hasNotifications != oldPermissionRecord.hasNotifications).toInteger()
                     }
 
                     else -> {
