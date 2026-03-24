@@ -5,6 +5,7 @@ import android.text.TextUtils
 import com.taiges.insight.into.bean.PageNativeData
 import com.taiges.insight.into.common.SpPrefs
 import com.taiges.insight.into.common.CommonUtil
+import com.taiges.insight.into.common.CommonUtil.Companion.createInsightUUID
 import com.taiges.insight.into.common.gson.GsonManager
 import com.taiges.insight.into.common.log.ILog
 import com.taiges.insight.into.common.tryBiz
@@ -15,6 +16,10 @@ import com.taiges.insight.into.common.tryBiz
 class InsightProperties(private val insightConfig: InsightConfig) {
 
     private val ctx: Context = insightConfig.context
+
+    private val sessionId by lazy {
+        createInsightUUID()
+    }
 
     /**
      * 用户隐私政策协议
@@ -57,6 +62,10 @@ class InsightProperties(private val insightConfig: InsightConfig) {
      */
     private val pageWebInfoMap = mutableMapOf<String, Map<String, String>>()
 
+    /**
+     * 获取会话 Id
+     */
+    fun getSessionId() = sessionId
 
     /**
      * 设置隐私协议状态
@@ -278,5 +287,23 @@ class InsightProperties(private val insightConfig: InsightConfig) {
         }
         return map
     }
+
+    /**
+     * 获取业务 Api 需要透传的的 SDK 请求头参数，该透传时最好沟通约定增加前缀，避免与业务请求头字段冲突
+     */
+    fun getApiHeaders(): Map<String, String> {
+        return mapOf(
+            "client-id" to getAnonymityId(),
+            "session-id" to getSessionId(),
+            "sdk-version" to getSdkVersion(),
+            "terminal-key" to insightConfig.terminalKey,//终端应用 Key (应用标识)，采集系统生成的key
+            "platform" to CommonUtil.PLATFORM,//平台类型
+        )
+    }
+
+    /**
+     * 获取 SDK 版本号
+     */
+    fun getSdkVersion() = BuildConfig.SDK_VERSION
 
 }

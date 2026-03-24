@@ -121,11 +121,6 @@ class InsightInto private constructor(private val insightConfig: InsightConfig) 
         }
     }
 
-    /**
-     * 获取 SDK 版本号
-     */
-    fun getSdkVersion() = BuildConfig.SDK_VERSION
-
     @Synchronized
     private fun batchDispatchEvent() {
         val hasCacheEventData = eventList.isNotEmpty()
@@ -165,7 +160,7 @@ class InsightInto private constructor(private val insightConfig: InsightConfig) 
         val properties: Map<String, Any> = mapOf(),
         val msgId: String = CommonUtil.createInsightUUID(),
         val time: Long = System.currentTimeMillis(),
-        val elapsedRealtime:Long = SystemClock.elapsedRealtime(),
+        val elapsedRealtime: Long = SystemClock.elapsedRealtime(),
         val sdkSource: String = CommonUtil.PLATFORM,
         var userId: String = "",
         var uniqueId: String = "",

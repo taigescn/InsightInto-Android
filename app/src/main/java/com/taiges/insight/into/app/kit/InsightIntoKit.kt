@@ -78,7 +78,12 @@ object InsightIntoKit {
     /**
      * 返回 sdk 版本号
      */
-    fun getSdkVersion() = insightInto.getSdkVersion()
+    fun getSdkVersion() = insightInto.properties.getSdkVersion()
+
+    /**
+     * 获取业务 Api 需要透传的的 SDK 请求头参数，该透传时最好沟通约定增加前缀，避免与业务请求头字段冲突
+     */
+    fun getApiHeaders() = insightInto.properties.getApiHeaders()
 
     /**
      * 隐私政策协议

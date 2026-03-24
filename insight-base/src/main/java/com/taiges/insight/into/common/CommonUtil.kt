@@ -34,10 +34,6 @@ class CommonUtil private constructor() {
             "00000000-0000-0000-0000-000000000000"
         )
 
-        val sessionId by lazy {
-            createInsightUUID()
-        }
-
         private var sdkFirstInitTime: Long = InsightInto.DEF_L
         private var androidId: String? = null
         private var deviceModel: String? = null

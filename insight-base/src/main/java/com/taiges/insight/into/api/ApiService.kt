@@ -450,7 +450,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
                 headers[HEADER_UNIQUE_ID] = insightConfig.properties.getUniqueId()
             }
             //session-id  String  是  会话 id
-            headers["session-id"] = CommonUtil.sessionId
+            headers["session-id"] = insightConfig.properties.getSessionId()
             //time-zone  String  是  时区编码
             headers[HEADER_TIME_ZONE] = TimeZone.getDefault().id
         }
