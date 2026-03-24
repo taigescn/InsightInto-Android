@@ -5,7 +5,7 @@ plugins {
 
 android {
     namespace = "com.taiges.insight.into"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         minSdk = 19

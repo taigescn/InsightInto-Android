@@ -20,7 +20,9 @@ class AppUtil {
             if (targetSdkVersion == 0) {
                 try {
                     val packageInfo = context.packageManager.getPackageInfo(context.packageName, 0)
-                    targetSdkVersion = packageInfo.applicationInfo.targetSdkVersion
+                    packageInfo.applicationInfo?.also {
+                        targetSdkVersion = it.targetSdkVersion
+                    }
                 } catch (e: PackageManager.NameNotFoundException) {
                     MLog.e("getSdkTargetVersion exception!", e)
                 }

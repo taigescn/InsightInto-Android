@@ -173,7 +173,9 @@ fun Long.formatTime(partter: String = "yyyy-MM-dd HH:mm:ss.SSS"): String {
 fun PackageInfo.getAppName(context: Context): String {
     var name = ""
     tryI {
-        name = applicationInfo.loadLabel(context.packageManager).toString()
+        applicationInfo?.also {
+            name = it.loadLabel(context.packageManager).toString()
+        }
     }
     return name
 }

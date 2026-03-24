@@ -138,7 +138,9 @@ class CommonUtil private constructor() {
                 var verName = InsightInto.DEF_UNKNOWN
                 tryI {
                     val packageInfo = getAppPackageInfo(context)
-                    verName = packageInfo.versionName
+                    packageInfo.versionName?.also {
+                        verName = it
+                    }
                 }
                 appVersionName = verName
                 verName

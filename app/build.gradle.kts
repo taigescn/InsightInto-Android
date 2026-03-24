@@ -8,7 +8,7 @@ plugins {
 
 android {
     namespace = "com.taiges.insight.into.app"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.taiges.insight.into.app"
