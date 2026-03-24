@@ -12,14 +12,6 @@ import com.taiges.insight.into.InsightInto.Companion.DEF_L
 import com.taiges.insight.into.bean.ReaderResult
 import com.taiges.insight.into.bean.LocalConfig
 import com.taiges.insight.into.bean.LocalEventConfig
-import com.taiges.insight.into.api.Request.Companion.HEADER_CATEGORY
-import com.taiges.insight.into.api.Request.Companion.HEADER_TERMINAL_TIMESTAMP
-import com.taiges.insight.into.api.Request.Companion.HEADER_COMPRESS_METHOD
-import com.taiges.insight.into.api.Request.Companion.HEADER_PUBLIC_KEY
-import com.taiges.insight.into.api.Request.Companion.HEADER_SECRET_KEY
-import com.taiges.insight.into.api.Request.Companion.HEADER_TIME_ZONE
-import com.taiges.insight.into.api.Request.Companion.HEADER_UNIQUE_ID
-import com.taiges.insight.into.api.Request.Companion.HEADER_USER_ID
 import com.taiges.insight.into.bean.api.BaseResult
 import com.taiges.insight.into.bean.api.PolicyConfig
 import com.taiges.insight.into.bean.api.ServerData
@@ -33,6 +25,7 @@ import com.taiges.insight.into.common.saveJsonObject
 import com.taiges.insight.into.common.toInteger
 import com.taiges.insight.into.common.toSha256
 import com.taiges.insight.into.common.formatTime
+import com.taiges.insight.into.common.tryBiz
 import com.taiges.insight.into.common.tryClose
 import com.taiges.insight.into.common.tryDisconnect
 import com.taiges.insight.into.common.tryI
@@ -42,6 +35,7 @@ import java.net.URL
 import java.util.TimeZone
 import java.util.Timer
 import java.util.concurrent.Executors
+import java.util.zip.GZIPOutputStream
 import javax.net.ssl.*
 import kotlin.concurrent.fixedRateTimer
 
@@ -49,6 +43,23 @@ import kotlin.concurrent.fixedRateTimer
  * 网络客户端，使用 HttpURLConnection
  */
 internal class ApiService(private val insightConfig: InsightConfig) {
+
+    companion object {
+        //服务端 Api Path
+        const val INTERFACE_CONFIG_BASIC = "collect/config"//查询配置 api
+        const val INTERFACE_MESSAGE = "collect/event"//实时事件采集接口
+
+        const val HEADER_TERMINAL_TIMESTAMP = "terminal-timestamp"
+        const val HEADER_CATEGORY = "category"
+        const val HEADER_PUBLIC_KEY = "public-key"
+        const val HEADER_TIME_ZONE = "time-zone"
+        const val HEADER_COMPRESS_METHOD = "compress-method"
+        const val HEADER_SECRET_KEY = "secret-key"
+        const val HEADER_USER_ID = "user-id"
+        const val HEADER_UNIQUE_ID = "unique-id"
+        const val HEADER_CONTENT_TYPE = "Content-Type"
+        const val HEADER_CONTENT_TYPE_VALUE = "application/json; charset=UTF-8"
+    }
 
     private val context = insightConfig.context
     private val keyServerData = "KEY_SERVER_DATA"
@@ -227,7 +238,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         eventUploadList.add(uploadId)
 
         val request = buildRequest(
-            Request.INTERFACE_MESSAGE,
+            INTERFACE_MESSAGE,
             body = body,
             headerMap = headerMap,
             policyConfig = readerResult.readerParam.policyConfig
@@ -240,7 +251,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
                     it["isSupplementCacheData"] = 1
                 }
                 val cacheEventRequest = buildRequest(
-                    Request.INTERFACE_MESSAGE,
+                    INTERFACE_MESSAGE,
                     body = newBody,
                     headerMap = headerMap,
                     policyConfig = readerResult.readerParam.policyConfig
@@ -300,7 +311,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
     private fun queryServerData(): ServerData? {
         tryI("queryServerData exception!") {
 
-            val configBaseResult = buildRequest(Request.INTERFACE_CONFIG_BASIC).call<ServerData>()
+            val configBaseResult = buildRequest(INTERFACE_CONFIG_BASIC).call<ServerData>()
             if (configBaseResult.isSuccess()) {
                 val serverData = configBaseResult.data!!
                 saveServerDataCache(serverData)
@@ -357,7 +368,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
     private fun supplementEventRequest() {
         val dataCacheValidTime = loadTerminalConfig().policyConfig.dataCacheValidTime
         val eventList = DbOpenHelper.queryAllEvent(context, dataCacheValidTime)
-        ILog.d("exce supplementCacheData size:$${eventList.size}")
+        ILog.d("exce supplementCacheData size:${eventList.size}")
         for (eventData in eventList) {
             tryI {
                 val uploadId = eventData.uploadId
@@ -384,35 +395,55 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         body: MutableMap<String, Any?>? = null,
         policyConfig: PolicyConfig = PolicyConfig(),
     ): Request {
-        val request = Request(
-            baseUrl = insightConfig.baseUrl, path = apiPath, header = headerMap, body = body
-        )
 
-        if (policyConfig.isOpenCompress()) {
-            //执行数据压缩
-            request.compress()
-        }
+        val baseUrl = insightConfig.baseUrl
+        val pathSeparator = "/"
+        val baseSeparator = if (baseUrl.endsWith(pathSeparator)) "" else pathSeparator
+        val apiUrl = "$baseUrl${baseSeparator}$apiPath"
 
-        if (policyConfig.isOpenEncrypt()) {
-            //执行数据加密
-            request.encrypt(policyConfig.publicKey)
+        var bodyLength = -1L
+        var originalBody: String? = null
+        var bodyContent: ByteArray? = null
+        body?.let {
+            val json = GsonManager.gson.toJson(it)
+            originalBody = json
+            json.toByteArray().also { bodyBytes ->
+                bodyContent = bodyBytes
+                bodyLength = bodyBytes.size.toLong()
+
+                if (policyConfig.isOpenCompress()) {
+                    //执行数据压缩
+                    if (bodyLength > 0) {
+                        tryBiz("compress data exception!") {
+                            val out = ByteArrayOutputStream()
+                            val gzipOutputStream = GZIPOutputStream(out)
+                            gzipOutputStream.write(bodyContent)
+                            gzipOutputStream.tryClose()
+                            val compressBytes = out.toByteArray()
+                            bodyContent = compressBytes
+                            bodyLength = compressBytes.size.toLong()
+                            headerMap[HEADER_COMPRESS_METHOD] = "gz"
+                        }
+                    }
+                }
+
+                if (policyConfig.isOpenEncrypt()) {
+                    //执行数据加密
+                    tryBiz("compress data exception!") {
+                        val out = ByteArrayOutputStream()
+                        val gzipOutputStream = GZIPOutputStream(out)
+                        gzipOutputStream.write(bodyContent)
+                        gzipOutputStream.tryClose()
+                        val encryptBytes = out.toByteArray()
+                        bodyContent = encryptBytes
+                        bodyLength = encryptBytes.size.toLong()
+                        headerMap[HEADER_COMPRESS_METHOD] = "gz"
+                    }
+                }
+            }
         }
 
         //添加公共请求头
-        addCommonHeaders(request)
-
-        return request
-    }
-
-    private inline fun <reified T> Request.call(): BaseResult<T?> {
-        return exceRequest(this)
-    }
-
-    /**
-     * 添加公共请求头
-     */
-    private fun addCommonHeaders(request: Request) {
-
         val headers = mutableMapOf(
             "app-key" to insightConfig.appKey,//业务终端编码
             "app-code" to insightConfig.appCode,//业务品牌/主体
@@ -421,20 +452,21 @@ internal class ApiService(private val insightConfig: InsightConfig) {
             "sdk-version" to BuildConfig.SDK_VERSION,//SDK 版本号
             "call-id" to CommonUtil.createInsightUUID(),//请求唯一 id
             "package-name" to context.packageName,//应用包名
+            HEADER_CONTENT_TYPE to HEADER_CONTENT_TYPE_VALUE //json 请求类型
         )
 
         //目标请求头字段列表，如果有额外的目标请求头，需要添加到公共请求头添加验签
         for (key in targetKeys) {
-            request.header[key]?.let {
+            headerMap[key]?.let {
                 headers[key] = it
             }
         }
 
         val collectTimestamp =
-            request.header[HEADER_TERMINAL_TIMESTAMP] ?: System.currentTimeMillis().toString()
+            headerMap[HEADER_TERMINAL_TIMESTAMP] ?: System.currentTimeMillis().toString()
         headers[HEADER_TERMINAL_TIMESTAMP] = collectTimestamp
 
-        if (request.needIgnoreCommonHeaderApi()) {
+        if (apiPath != INTERFACE_CONFIG_BASIC) {
             //client-id  String  是  设备匿名标识符
             headers["client-id"] = insightConfig.getAnonymityId().id
             //app-version  String  否  应用版本号，Android/iOS 端会有值
@@ -457,21 +489,32 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         }
 
         //data-sign  String  是  Body数据验签，值为 Sha256 ，长度为 64 位
-        if (request.hasBody()) {
-            val contentLength = request.getBodyLength()
-            val dataSignText = "requestBody=$contentLength"
+        if (bodyLength > 0) {
+            val dataSignText = "requestBody=$bodyLength"
             headers["data-sign"] = dataSignText.toSha256()
         }
         //data-sign  String  是  请求头验签,值为 Sha256 ，长度为 64 位
         headers["head-sign"] = CommonUtil.createSign(headers)
-        request.header.putAll(headers)
+        headerMap.putAll(headers)
+
+        return Request(
+            apiUrl = apiUrl,
+            header = headerMap,
+            bodyByteArray = bodyContent,
+            bodyLength = bodyLength,
+            originalBody = originalBody
+        )
+    }
+
+    private inline fun <reified T> Request.call(): BaseResult<T?> {
+        return exceRequest(this)
     }
 
     /**
      * 创建 HttpURLConnection 连接并设置相关配置
      */
     private fun openConnection(request: Request): HttpURLConnection {
-        val url = URL(request.url)
+        val url = URL(request.apiUrl)
 
         val connection = url.openConnection() as HttpURLConnection
         val hasBody = request.hasBody()
@@ -515,7 +558,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
                 }
 
                 if (request.hasBody()) {
-                    val contentLength = request.getBodyLength()
+                    val contentLength = request.bodyLength
                     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.KITKAT) {
                         //Body 长度未知，采用默认分块大小传输
                         connection.setChunkedStreamingMode(0)
@@ -547,7 +590,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
                     return baseResult
                 }
             } catch (e: Exception) {
-                val msg = "The $i th time request: ${request.url} ($code) ${e.message ?: ""}"
+                val msg = "The $i th time request: ${request.apiUrl} ($code) ${e.message ?: ""}"
                 if (i < uploadTryCount) {
                     ILog.e(msg, e)
                 } else {

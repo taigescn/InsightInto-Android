@@ -39,7 +39,7 @@ open class ApiLogger : Logger {
             append("Request ")
             append(methodName)
             append(" ")
-            append(request.url)
+            append(request.apiUrl)
             append(" ")
 
             //构建请求头信息
@@ -54,7 +54,7 @@ open class ApiLogger : Logger {
             }
 
             val bodyLengthStr = if (request.hasBody()) {
-                "(${request.getBodyLength()} byte body)"
+                "(${request.bodyLength} byte body)"
             } else {
                 ""
             }
@@ -64,7 +64,7 @@ open class ApiLogger : Logger {
                 append(String(request.getBodyContent()))
                 append("\n")
                 append("OriginalBody:\n")
-                val originalBody = Gson().toJson(request.body)
+                val originalBody = Gson().toJson(request.originalBody)
                 append(originalBody)
                 append("\n")
             }
@@ -92,7 +92,7 @@ open class ApiLogger : Logger {
             append("Response ")
             append(methodName)
             append(" ")
-            append(request.url)
+            append(request.apiUrl)
             append(" ($code)")
 
             val bodyLength = if (response.isNotEmpty()) {
