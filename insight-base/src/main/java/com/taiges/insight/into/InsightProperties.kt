@@ -17,10 +17,6 @@ class InsightProperties(private val insightConfig: InsightConfig) {
 
     private val ctx: Context = insightConfig.context
 
-    private val sessionId by lazy {
-        createInsightUUID()
-    }
-
     /**
      * 用户隐私政策协议
      */
@@ -65,7 +61,7 @@ class InsightProperties(private val insightConfig: InsightConfig) {
     /**
      * 获取会话 Id
      */
-    fun getSessionId() = sessionId
+    fun getSessionId() = CommonUtil.sessionId
 
     /**
      * 设置隐私协议状态

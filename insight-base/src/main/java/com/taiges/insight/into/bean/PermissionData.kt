@@ -3,6 +3,7 @@ package com.taiges.insight.into.bean
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.os.Build
 import com.taiges.insight.into.common.fromJsonObject
 import com.taiges.insight.into.common.saveJsonObject
 import com.taiges.insight.into.common.toInteger
@@ -29,6 +30,7 @@ class PermissionData private constructor(
             val data = mutableMapOf<String, Any>()
             data["requestCode"] = requestCode
             var hasCoarseLocation = false
+            var hasNotifications = false
             var hasCamera = false
             val otherPermissions = mutableListOf<String>()
 
@@ -58,6 +60,13 @@ class PermissionData private constructor(
                             hasCoarseLocation != oldPermissionRecord.hasCoarseLocation
                     }
 
+                    "android.permission.POST_NOTIFICATIONS" -> {
+                        hasNotifications = isGranted
+                        data["hasNotifications"] = isGranted.toInteger()
+                        data["changeNotifications"] =
+                            hasNotifications != oldPermissionRecord.hasNotifications
+                    }
+
                     else -> {
                         otherPermissions.add("$permission(${isGranted.toInteger()})")
                     }
@@ -72,6 +81,7 @@ class PermissionData private constructor(
             val permissionRecord =
                 PermissionRecord(
                     hasCoarseLocation = hasCoarseLocation,
+                    hasNotifications = hasNotifications,
                     hasCamera = hasCamera
                 )
 
@@ -84,6 +94,7 @@ class PermissionData private constructor(
 
     internal class PermissionRecord(
         val hasCoarseLocation: Boolean = false,
+        var hasNotifications: Boolean = false,
         val hasCamera: Boolean = false
     )
 
