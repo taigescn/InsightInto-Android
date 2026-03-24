@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.os.SystemClock
 import android.util.AndroidRuntimeException
+import android.util.Base64
 import com.google.gson.reflect.TypeToken
 import com.taiges.insight.into.BuildConfig
 import com.taiges.insight.into.InsightConfig
@@ -12,19 +13,22 @@ import com.taiges.insight.into.InsightInto.Companion.DEF_L
 import com.taiges.insight.into.bean.ReaderResult
 import com.taiges.insight.into.bean.LocalConfig
 import com.taiges.insight.into.bean.LocalEventConfig
+import com.taiges.insight.into.bean.UploadEventData
 import com.taiges.insight.into.bean.api.BaseResult
-import com.taiges.insight.into.bean.api.PolicyConfig
 import com.taiges.insight.into.bean.api.ServerData
 import com.taiges.insight.into.common.SpPrefs
 import com.taiges.insight.into.common.CommonUtil
 import com.taiges.insight.into.common.gson.GsonManager
 import com.taiges.insight.into.common.db.DbOpenHelper
+import com.taiges.insight.into.common.encrypt.AesUtil
+import com.taiges.insight.into.common.encrypt.RsaUtil
 import com.taiges.insight.into.common.fromJsonObject
 import com.taiges.insight.into.common.log.ILog
 import com.taiges.insight.into.common.saveJsonObject
 import com.taiges.insight.into.common.toInteger
 import com.taiges.insight.into.common.toSha256
 import com.taiges.insight.into.common.formatTime
+import com.taiges.insight.into.common.toMd5
 import com.taiges.insight.into.common.tryBiz
 import com.taiges.insight.into.common.tryClose
 import com.taiges.insight.into.common.tryDisconnect
@@ -47,8 +51,16 @@ internal class ApiService(private val insightConfig: InsightConfig) {
     companion object {
         //服务端 Api Path
         const val INTERFACE_CONFIG_BASIC = "collect/config"//查询配置 api
-        const val INTERFACE_MESSAGE = "collect/event"//实时事件采集接口
+        const val INTERFACE_EVENT = "collect/event"//实时事件采集接口
 
+        const val HEADER_APP_KEY = "app-key"
+        const val HEADER_APP_CODE = "app-code"
+        const val HEADER_TERMINAL_KEY = "terminal-key"
+        const val HEADER_PLATFORM = "platform"
+        const val HEADER_SDK_VERSION = "sdk-version"
+        const val HEADER_PACKAGE_NAME = "package-name"
+        const val HEADER_CONTENT_TYPE = "Content-Type"
+        const val HEADER_CALL_ID = "call-id"
         const val HEADER_TERMINAL_TIMESTAMP = "terminal-timestamp"
         const val HEADER_CATEGORY = "category"
         const val HEADER_PUBLIC_KEY = "public-key"
@@ -57,8 +69,6 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         const val HEADER_SECRET_KEY = "secret-key"
         const val HEADER_USER_ID = "user-id"
         const val HEADER_UNIQUE_ID = "unique-id"
-        const val HEADER_CONTENT_TYPE = "Content-Type"
-        const val HEADER_CONTENT_TYPE_VALUE = "application/json; charset=UTF-8"
     }
 
     private val context = insightConfig.context
@@ -85,14 +95,37 @@ internal class ApiService(private val insightConfig: InsightConfig) {
      */
     private val uploadTryCount = 2
 
-    private val targetKeys = listOf(
+    /**
+     * 公共请求头验签字段
+     */
+    private val signTargetKeys = listOf(
+        HEADER_APP_KEY,
+        HEADER_APP_CODE,
+        HEADER_TERMINAL_KEY,
+        HEADER_PLATFORM,
+        HEADER_SDK_VERSION,
+        HEADER_PACKAGE_NAME,
+        HEADER_CALL_ID,
         HEADER_COMPRESS_METHOD,
         HEADER_SECRET_KEY,
         HEADER_PUBLIC_KEY,
         HEADER_CATEGORY,
         HEADER_USER_ID,
-        HEADER_UNIQUE_ID
+        HEADER_UNIQUE_ID,
+        HEADER_TERMINAL_TIMESTAMP
     )
+
+    private val commonHeaders by lazy {
+        mutableMapOf(
+            HEADER_APP_KEY to insightConfig.appKey,//业务终端编码
+            HEADER_APP_CODE to insightConfig.appCode,//业务品牌/主体
+            HEADER_TERMINAL_KEY to insightConfig.terminalKey,//终端应用 Key (应用标识)，采集系统生成的key
+            HEADER_PLATFORM to CommonUtil.PLATFORM,//平台类型
+            HEADER_SDK_VERSION to BuildConfig.SDK_VERSION,//SDK 版本号
+            HEADER_CALL_ID to CommonUtil.createInsightUUID(),//请求唯一 id
+            HEADER_PACKAGE_NAME to context.packageName,//应用包名
+        )
+    }
 
     private val singleThreadExecutor = Executors.newSingleThreadExecutor()
     private val supplementCacheDataDelay = 15000L //补报数据间隔 15 秒
@@ -223,12 +256,12 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         //设置当前页面标识
         body.putAll(event.pageDataMap)
 
-        val headerMap = mutableMapOf<String, String>()
-        headerMap[HEADER_USER_ID] = event.userId
-        headerMap[HEADER_UNIQUE_ID] = event.uniqueId
+        val headers = mutableMapOf<String, String>()
+        headers[HEADER_USER_ID] = event.userId
+        headers[HEADER_UNIQUE_ID] = event.uniqueId
         val category = readerResult.readerParam.localEventConfig.category
-        headerMap[HEADER_CATEGORY] = category
-        headerMap[HEADER_TERMINAL_TIMESTAMP] = uploadTimestamp.toString()
+        headers[HEADER_CATEGORY] = category
+        headers[HEADER_TERMINAL_TIMESTAMP] = uploadTimestamp.toString()
 
         if (insightConfig.debug) {
             ILog.d("Start upload event:${event.ecode}")
@@ -237,32 +270,19 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         val uploadId = "$category-${event.msgId}"
         eventUploadList.add(uploadId)
 
-        val request = buildRequest(
-            INTERFACE_MESSAGE,
-            body = body,
-            headerMap = headerMap,
-            policyConfig = readerResult.readerParam.policyConfig
+        val uploadEventData = buildUploadEventData(
+            uploadId = uploadId, body = body, headers = headers
         )
 
         singleThreadExecutor.submit {
             tryI {
-                val newBody = mutableMapOf<String, Any?>().also {
-                    it.putAll(body)
-                    it["isSupplementCacheData"] = 1
-                }
-                val cacheEventRequest = buildRequest(
-                    INTERFACE_MESSAGE,
-                    body = newBody,
-                    headerMap = headerMap,
-                    policyConfig = readerResult.readerParam.policyConfig
-                )
                 ILog.d("Exce saveEventRequest uploadId:${uploadId}")
-                DbOpenHelper.saveEventRequest(context, uploadId, cacheEventRequest)
+                DbOpenHelper.saveEventRequest(context, uploadEventData)
             }
         }
 
         val baseResult = try {
-            request.call<Any?>()
+            uploadEventData.call<Any?>()
         } catch (e: Throwable) {
             BaseResult.createError<Any?>("uploadEvent exception:${e.message}")
         }
@@ -311,7 +331,8 @@ internal class ApiService(private val insightConfig: InsightConfig) {
     private fun queryServerData(): ServerData? {
         tryI("queryServerData exception!") {
 
-            val configBaseResult = buildRequest(INTERFACE_CONFIG_BASIC).call<ServerData>()
+            val request = buildRequest(INTERFACE_CONFIG_BASIC, commonHeaders)
+            val configBaseResult = exceRequest<ServerData>(request)
             if (configBaseResult.isSuccess()) {
                 val serverData = configBaseResult.data!!
                 saveServerDataCache(serverData)
@@ -374,7 +395,10 @@ internal class ApiService(private val insightConfig: InsightConfig) {
                 val uploadId = eventData.uploadId
                 if (!eventUploadList.contains(uploadId)) {
                     ILog.d("SupplementCacheData uploadId:${uploadId}")
-                    val baseResult = eventData.request.call<Any?>()
+                    eventData.body?.also {
+                        it["isSupplementCacheData"] = 1
+                    }
+                    val baseResult = eventData.call<Any?>()
                     if (baseResult.isSuccess()) {
                         ILog.d("exce deleteEventRequest uploadId:${uploadId}")
                         DbOpenHelper.deleteEventRequest(context, uploadId)
@@ -386,31 +410,70 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         }
     }
 
+    private fun buildUploadEventData(
+        uploadId: String,
+        headers: MutableMap<String, String> = mutableMapOf(),
+        body: MutableMap<String, Any?>? = null
+    ): UploadEventData {
+
+        //添加公共请求头
+        headers.putAll(commonHeaders)
+
+        val collectTimestamp =
+            headers[HEADER_TERMINAL_TIMESTAMP] ?: System.currentTimeMillis().toString()
+        headers[HEADER_TERMINAL_TIMESTAMP] = collectTimestamp
+
+        //client-id  String  是  设备匿名标识符
+        headers["client-id"] = insightConfig.getAnonymityId().id
+        //app-version  String  否  应用版本号，Android/iOS 端会有值
+        headers["app-version"] = CommonUtil.getAppVersion(context)
+        //app-vcode  String  否  应用版本号 Code，Android/iOS 端会有值
+        headers["app-vcode"] = CommonUtil.getAppVersionCode(context).toString()
+        if (!headers.containsKey(HEADER_USER_ID)) {
+            //user-id  String  否  用户 Id，已登录状态时有值，未登录时传入空串
+            headers[HEADER_USER_ID] = insightConfig.properties.getUserId()
+        }
+
+        if (!headers.containsKey(HEADER_UNIQUE_ID)) {
+            //unqiue-id  String  否  用户实名 Id，已实名状态时有值，未实名时传入空串
+            headers[HEADER_UNIQUE_ID] = insightConfig.properties.getUniqueId()
+        }
+        //session-id  String  是  会话 id
+        headers["session-id"] = insightConfig.properties.getSessionId()
+        //time-zone  String  是  时区编码
+        headers[HEADER_TIME_ZONE] = TimeZone.getDefault().id
+
+        return UploadEventData(
+            uploadId = uploadId,
+            headers = headers,
+            body = body,
+        )
+    }
+
     /**
      * 请求 Api
      */
     private fun buildRequest(
         apiPath: String,
-        headerMap: MutableMap<String, String> = mutableMapOf(),
-        body: MutableMap<String, Any?>? = null,
-        policyConfig: PolicyConfig = PolicyConfig(),
+        headers: MutableMap<String, String> = mutableMapOf(),
+        body: MutableMap<String, Any?>? = null
     ): Request {
-
         val baseUrl = insightConfig.baseUrl
         val pathSeparator = "/"
         val baseSeparator = if (baseUrl.endsWith(pathSeparator)) "" else pathSeparator
-        val apiUrl = "$baseUrl${baseSeparator}$apiPath"
+        val url = "$baseUrl${baseSeparator}$apiPath"
+
+        headers[HEADER_CONTENT_TYPE] = "application/json; charset=UTF-8" //json 请求类型
+        headers[HEADER_CALL_ID] = CommonUtil.createInsightUUID()//请求唯一 id
 
         var bodyLength = -1L
-        var originalBody: String? = null
-        var bodyContent: ByteArray? = null
+        var bodyContent = byteArrayOf()
         body?.let {
+            val policyConfig = loadTerminalConfig().policyConfig
             val json = GsonManager.gson.toJson(it)
-            originalBody = json
             json.toByteArray().also { bodyBytes ->
                 bodyContent = bodyBytes
                 bodyLength = bodyBytes.size.toLong()
-
                 if (policyConfig.isOpenCompress()) {
                     //执行数据压缩
                     if (bodyLength > 0) {
@@ -422,70 +485,31 @@ internal class ApiService(private val insightConfig: InsightConfig) {
                             val compressBytes = out.toByteArray()
                             bodyContent = compressBytes
                             bodyLength = compressBytes.size.toLong()
-                            headerMap[HEADER_COMPRESS_METHOD] = "gz"
+                            headers[HEADER_COMPRESS_METHOD] = "gz"
                         }
                     }
                 }
 
                 if (policyConfig.isOpenEncrypt()) {
                     //执行数据加密
-                    tryBiz("compress data exception!") {
-                        val out = ByteArrayOutputStream()
-                        val gzipOutputStream = GZIPOutputStream(out)
-                        gzipOutputStream.write(bodyContent)
-                        gzipOutputStream.tryClose()
-                        val encryptBytes = out.toByteArray()
-                        bodyContent = encryptBytes
-                        bodyLength = encryptBytes.size.toLong()
-                        headerMap[HEADER_COMPRESS_METHOD] = "gz"
-                    }
+                    val publicKey = policyConfig.publicKey
+                    val aesPassword = CommonUtil.createRandomUUID()
+                    val aesBody = AesUtil.encrypt(bodyContent, aesPassword)
+                    val publicKeyMd5 = publicKey.toMd5()
+                    val publicKeyBytes = Base64.decode(publicKey, Base64.DEFAULT)
+                    //Rsa 公钥加密 AES 的随机密匙
+                    val rsaAesPassword = Base64.encodeToString(
+                        RsaUtil.encrypt(
+                            aesPassword.toByteArray(), publicKeyBytes
+                        ), Base64.NO_WRAP
+                    )
+
+                    bodyContent = aesBody.toByteArray()
+                    bodyLength = bodyContent.size.toLong()
+                    headers[HEADER_SECRET_KEY] = rsaAesPassword
+                    headers[HEADER_PUBLIC_KEY] = publicKeyMd5
                 }
             }
-        }
-
-        //添加公共请求头
-        val headers = mutableMapOf(
-            "app-key" to insightConfig.appKey,//业务终端编码
-            "app-code" to insightConfig.appCode,//业务品牌/主体
-            "terminal-key" to insightConfig.terminalKey,//终端应用 Key (应用标识)，采集系统生成的key
-            "platform" to CommonUtil.PLATFORM,//平台类型
-            "sdk-version" to BuildConfig.SDK_VERSION,//SDK 版本号
-            "call-id" to CommonUtil.createInsightUUID(),//请求唯一 id
-            "package-name" to context.packageName,//应用包名
-            HEADER_CONTENT_TYPE to HEADER_CONTENT_TYPE_VALUE //json 请求类型
-        )
-
-        //目标请求头字段列表，如果有额外的目标请求头，需要添加到公共请求头添加验签
-        for (key in targetKeys) {
-            headerMap[key]?.let {
-                headers[key] = it
-            }
-        }
-
-        val collectTimestamp =
-            headerMap[HEADER_TERMINAL_TIMESTAMP] ?: System.currentTimeMillis().toString()
-        headers[HEADER_TERMINAL_TIMESTAMP] = collectTimestamp
-
-        if (apiPath != INTERFACE_CONFIG_BASIC) {
-            //client-id  String  是  设备匿名标识符
-            headers["client-id"] = insightConfig.getAnonymityId().id
-            //app-version  String  否  应用版本号，Android/iOS 端会有值
-            headers["app-version"] = CommonUtil.getAppVersion(context)
-            //app-vcode  String  否  应用版本号 Code，Android/iOS 端会有值
-            headers["app-vcode"] = CommonUtil.getAppVersionCode(context).toString()
-            if (!headers.containsKey(HEADER_USER_ID)) {
-                //user-id  String  否  用户 Id，已登录状态时有值，未登录时传入空串
-                headers[HEADER_USER_ID] = insightConfig.properties.getUserId()
-            }
-
-            if (!headers.containsKey(HEADER_UNIQUE_ID)) {
-                //unqiue-id  String  否  用户实名 Id，已实名状态时有值，未实名时传入空串
-                headers[HEADER_UNIQUE_ID] = insightConfig.properties.getUniqueId()
-            }
-            //session-id  String  是  会话 id
-            headers["session-id"] = insightConfig.properties.getSessionId()
-            //time-zone  String  是  时区编码
-            headers[HEADER_TIME_ZONE] = TimeZone.getDefault().id
         }
 
         //data-sign  String  是  Body数据验签，值为 Sha256 ，长度为 64 位
@@ -493,28 +517,36 @@ internal class ApiService(private val insightConfig: InsightConfig) {
             val dataSignText = "requestBody=$bodyLength"
             headers["data-sign"] = dataSignText.toSha256()
         }
+
+        val signHeaders = mutableMapOf<String, String>()
+        for (targetKey in signTargetKeys) {
+            headers[targetKey]?.let {
+                signHeaders[targetKey] = it
+            }
+        }
+
         //data-sign  String  是  请求头验签,值为 Sha256 ，长度为 64 位
-        headers["head-sign"] = CommonUtil.createSign(headers)
-        headerMap.putAll(headers)
+        headers["head-sign"] = CommonUtil.createSign(signHeaders)
 
         return Request(
-            apiUrl = apiUrl,
-            header = headerMap,
-            bodyByteArray = bodyContent,
+            url = url,
+            headers = headers,
+            body = body,
             bodyLength = bodyLength,
-            originalBody = originalBody
+            bodyContent = bodyContent
         )
     }
 
-    private inline fun <reified T> Request.call(): BaseResult<T?> {
-        return exceRequest(this)
+    private inline fun <reified T> UploadEventData.call(): BaseResult<T?> {
+        val request = buildRequest(apiPath = INTERFACE_EVENT, headers = headers, body = body)
+        return exceRequest(request)
     }
 
     /**
      * 创建 HttpURLConnection 连接并设置相关配置
      */
     private fun openConnection(request: Request): HttpURLConnection {
-        val url = URL(request.apiUrl)
+        val url = URL(request.url)
 
         val connection = url.openConnection() as HttpURLConnection
         val hasBody = request.hasBody()
@@ -547,13 +579,14 @@ internal class ApiService(private val insightConfig: InsightConfig) {
             var response = ""
             var exception: Exception? = null
             try {
+
                 if (insightConfig.debug) {
                     insightConfig.getLogger().request(request)
                 }
 
                 connection = openConnection(request)
 
-                for (entry in request.header.entries) {
+                for (entry in request.headers.entries) {
                     connection.setRequestProperty(entry.key, entry.value)
                 }
 
@@ -567,7 +600,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
                         connection.setFixedLengthStreamingMode(contentLength)
                     }
                     ops = connection.outputStream.apply {
-                        write(request.getBodyContent())
+                        write(request.bodyContent)
                         flush()
                     }
                 }
@@ -590,7 +623,7 @@ internal class ApiService(private val insightConfig: InsightConfig) {
                     return baseResult
                 }
             } catch (e: Exception) {
-                val msg = "The $i th time request: ${request.apiUrl} ($code) ${e.message ?: ""}"
+                val msg = "The $i th time request: ${request.url} ($code) ${e.message ?: ""}"
                 if (i < uploadTryCount) {
                     ILog.e(msg, e)
                 } else {

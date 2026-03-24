@@ -6,8 +6,7 @@ import android.database.Cursor
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 import android.text.TextUtils
-import com.taiges.insight.into.api.Request
-import com.taiges.insight.into.bean.UploadEventRequestCache
+import com.taiges.insight.into.bean.UploadEventData
 import com.taiges.insight.into.common.CommonUtil
 import com.taiges.insight.into.common.gson.GsonManager
 import com.taiges.insight.into.common.encrypt.AesUtil
@@ -34,7 +33,7 @@ internal class DbOpenHelper(context: Context) :
          * 事件采集表 SQL
          */
         private const val CREATE_INSIGHT_INTO_EVENT_DATA_SQL =
-            "CREATE TABLE IF NOT EXISTS $TABLE_INSIGHT_INTO_EVENT(uploadId text PRIMARY KEY,data text,isEncrypt integer, createTime timestamp,remark text)"
+            "CREATE TABLE IF NOT EXISTS $TABLE_INSIGHT_INTO_EVENT(uploadId text PRIMARY KEY,data text,type integer,isEncrypt integer, createTime timestamp,remark text)"
 
         private var dbOpenHelper: DbOpenHelper? = null
         private val lockAny = Any()
@@ -54,14 +53,15 @@ internal class DbOpenHelper(context: Context) :
          * 保存事件
          */
         @Synchronized
-        fun saveEventRequest(context: Context, uploadId: String, request: Request) {
-            val data = GsonManager.gson.toJson(request)
+        fun saveEventRequest(context: Context, uploadEventData: UploadEventData) {
+            val data = GsonManager.gson.toJson(uploadEventData)
             val encryptData = AesUtil.encryptStr(data, CommonUtil.akx)
 
             val contentValues = ContentValues()
-            contentValues.put("uploadId", uploadId)
+            contentValues.put("uploadId", uploadEventData.uploadId)
             contentValues.put("data", encryptData)
             contentValues.put("createTime", System.currentTimeMillis())
+            contentValues.put("type", 1)
             contentValues.put("isEncrypt", 1)
             contentValues.put("remark", "")
 
@@ -84,16 +84,16 @@ internal class DbOpenHelper(context: Context) :
         fun queryAllEvent(
             context: Context,
             dataCacheValidTime: Long
-        ): List<UploadEventRequestCache> {
-            val list = mutableListOf<UploadEventRequestCache>()
+        ): List<UploadEventData> {
+            val list = mutableListOf<UploadEventData>()
             val projection = arrayOf("uploadId", "data", "createTime")
             val sortOrder = "createTime DESC"
 
             val cursor = getInstance(context).queryData(
                 TABLE_INSIGHT_INTO_EVENT,
                 projection,
-                null,
-                null,
+                "type = ?",
+                arrayOf("1"),
                 sortOrder
             )
 
@@ -112,8 +112,11 @@ internal class DbOpenHelper(context: Context) :
 
                         if (!TextUtils.isEmpty(uploadId)) {
                             val jsonData = AesUtil.decryptStr(data, CommonUtil.akx)
-                            val request = GsonManager.gson.fromJson(jsonData, Request::class.java)
-                            list.add(UploadEventRequestCache(uploadId, request))
+                            val uploadEventData = GsonManager.gson.fromJson(
+                                jsonData,
+                                UploadEventData::class.java
+                            )
+                            list.add(uploadEventData)
                         }
                     } catch (t: Throwable) {
                         ILog.e("query event exception!", t)
