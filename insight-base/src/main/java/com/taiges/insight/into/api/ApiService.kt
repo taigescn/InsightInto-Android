@@ -18,7 +18,7 @@ import com.taiges.insight.into.bean.api.BaseResult
 import com.taiges.insight.into.bean.api.ServerData
 import com.taiges.insight.into.common.SpPrefs
 import com.taiges.insight.into.common.CommonUtil
-import com.taiges.insight.into.common.gson.GsonManager
+import com.taiges.insight.into.common.GsonManager
 import com.taiges.insight.into.common.db.DbOpenHelper
 import com.taiges.insight.into.common.encrypt.AesUtil
 import com.taiges.insight.into.common.encrypt.RsaUtil

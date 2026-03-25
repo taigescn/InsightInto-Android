@@ -21,9 +21,19 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = rootProject.file("./InsightIntoKeyStore")
+            keyAlias = "InsightInto"
+            storePassword = "insightinto"
+            keyPassword = "insightinto"
+        }
+    }
+
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -65,7 +75,6 @@ android {
             buildConfigField("String", "TERMINAL_KEY", "\"$terminalKey\"")
             buildConfigField("String", "API_BASE_URL", "\"$apiBaseUrl\"")
             manifestPlaceholders["appLabel"] = "InsightIntoDev"
-
         }
     }
 }

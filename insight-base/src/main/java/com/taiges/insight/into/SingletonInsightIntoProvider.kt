@@ -1,7 +1,6 @@
 package com.taiges.insight.into
 
 import android.content.Context
-import com.taiges.insight.into.bean.AnonymityId
 import com.taiges.insight.into.common.log.Logger
 
 /**
@@ -11,7 +10,6 @@ internal class SingletonInsightIntoProvider(private val provider: InsightIntoPro
     InsightIntoProvider() {
 
     private var logger: Logger? = null
-    private var anonymityId: AnonymityId? = null
     private var readerService: ReaderService? = null
 
     companion object {

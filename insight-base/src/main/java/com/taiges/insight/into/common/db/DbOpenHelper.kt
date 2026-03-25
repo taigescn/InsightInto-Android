@@ -8,7 +8,7 @@ import android.database.sqlite.SQLiteOpenHelper
 import android.text.TextUtils
 import com.taiges.insight.into.bean.UploadEventData
 import com.taiges.insight.into.common.CommonUtil
-import com.taiges.insight.into.common.gson.GsonManager
+import com.taiges.insight.into.common.GsonManager
 import com.taiges.insight.into.common.encrypt.AesUtil
 import com.taiges.insight.into.common.getLongData
 import com.taiges.insight.into.common.getStringData

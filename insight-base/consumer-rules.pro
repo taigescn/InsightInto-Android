@@ -1,0 +1,1 @@
+-keep class com.taiges.insight.into.bean.** { *; }

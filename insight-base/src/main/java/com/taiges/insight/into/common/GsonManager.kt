@@ -1,7 +1,5 @@
-package com.taiges.insight.into.common.gson
+package com.taiges.insight.into.common
 
-import com.google.gson.ExclusionStrategy
-import com.google.gson.FieldAttributes
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.JsonDeserializationContext
@@ -16,7 +14,6 @@ import java.lang.reflect.Type
 object GsonManager {
     val gson: Gson by lazy {
         GsonBuilder()
-            .setExclusionStrategies(SkipExclusionStrategy())//自定义排除策略
             .enableComplexMapKeySerialization()
             .registerTypeAdapter(
                 object : TypeToken<MutableMap<String, Any?>>() {}.type, NumberTypeAdapter()
@@ -74,25 +71,6 @@ object GsonManager {
                     number.toLong()
                 }
             }
-        }
-    }
-
-    /**
-     * 自定义排除策略
-     */
-    private class SkipExclusionStrategy : ExclusionStrategy {
-        override fun shouldSkipClass(clazz: Class<*>?): Boolean {
-            return false
-        }
-
-        /**
-         * Gson 序列化和反序列化时排除ISkipField注解字段
-         *
-         * @param f
-         * @return
-         */
-        override fun shouldSkipField(f: FieldAttributes): Boolean {
-            return f.getAnnotation(ISkipField::class.java) != null
         }
     }
 }

@@ -1,7 +1,6 @@
 package com.taiges.insight.into
 
 import android.content.Context
-import com.taiges.insight.into.bean.AnonymityId
 import com.taiges.insight.into.bean.ReaderParam
 import com.taiges.insight.into.bean.ReaderResult
 import com.taiges.insight.into.common.CommonUtil

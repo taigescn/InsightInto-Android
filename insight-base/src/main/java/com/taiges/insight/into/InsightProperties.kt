@@ -5,8 +5,7 @@ import android.text.TextUtils
 import com.taiges.insight.into.bean.PageNativeData
 import com.taiges.insight.into.common.SpPrefs
 import com.taiges.insight.into.common.CommonUtil
-import com.taiges.insight.into.common.CommonUtil.Companion.createInsightUUID
-import com.taiges.insight.into.common.gson.GsonManager
+import com.taiges.insight.into.common.GsonManager
 import com.taiges.insight.into.common.log.ILog
 import com.taiges.insight.into.common.tryBiz
 
