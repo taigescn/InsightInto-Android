@@ -1,5 +1,6 @@
 package com.taiges.insight.into.app.common
 
+import android.text.TextUtils
 import com.taiges.insight.into.app.App
 import com.taiges.insight.into.app.kit.InsightIntoKit
 
@@ -57,6 +58,7 @@ object AccountManager {
         //注意：userId 实际场景请加密存储
         AppSpUtil.putString(context, userIdSpKey, userId)
         InsightIntoKit.setUserId(userId)
+        setIsLogin(!TextUtils.isEmpty(userId))
     }
 
     fun getUserId(): String {

@@ -100,8 +100,17 @@ object InsightIntoKit {
      */
     fun setUserId(userId: String) {
         insightInto.properties.setUserId(userId)
+        val isLogin = userId.isNotEmpty()
+        val isLoginPair = "isLogin" to isLogin
         //根据传入的 UserId 判断当前是否为登录状态，并添加至会话级属性中
-        insightInto.properties.addSessionProperties("isLogin" to userId.isNotEmpty())
+        insightInto.properties.addSessionProperties(isLoginPair)
+        for (sessionProperty in sessionProperties) {
+            if (sessionProperty.first == "isLogin") {
+                sessionProperties.remove(sessionProperty)
+                sessionProperties.add(isLoginPair)
+                break
+            }
+        }
     }
 
     /**

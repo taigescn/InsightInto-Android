@@ -46,6 +46,7 @@ class EventActivity : BaseBindingActivity<ActivityEventBinding>() {
         binding.settingUserIdBtn.setOnClickListener {
             val userId = binding.userIdEt.text.toString()
             AccountManager.setUserId(userId)
+            sessionPropertiesAdapter.notifyDataSetChanged()
         }
 
         AccountManager.getUniqueId().let {
