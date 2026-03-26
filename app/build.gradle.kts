@@ -82,6 +82,7 @@ android {
 dependencies {
 
     implementation(project(":ii-base"))
+    implementation(project(":core:ii-core"))
     debugImplementation(project(":module:ii-log-debug"))
     releaseImplementation(project(":module:ii-log-release"))
     implementation(libs.multidex)
