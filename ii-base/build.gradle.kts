@@ -1,7 +1,10 @@
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.android)
+    id("maven-publish")
 }
+
+apply(from = rootProject.file("./publish.gradle.kts"))
 
 android {
     namespace = "com.taiges.insight.into"

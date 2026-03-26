@@ -83,8 +83,8 @@ dependencies {
 
     implementation(project(":ii-base"))
     implementation(project(":core:ii-core"))
-    debugImplementation(project(":module:insight-log-debug"))
-    releaseImplementation(project(":module:insight-log-release"))
+    debugImplementation(project(":module:ii-log-debug"))
+    releaseImplementation(project(":module:ii-log-release"))
     implementation(libs.multidex)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

@@ -27,5 +27,5 @@ rootProject.name = "InsightInto-Android"
 include(":app")
 include(":ii-base")
 include("core:ii-core")
-include("module:insight-log-debug")
-include("module:insight-log-release")
+include("module:ii-log-debug")
+include("module:ii-log-release")
