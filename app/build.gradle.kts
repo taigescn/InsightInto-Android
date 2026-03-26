@@ -81,8 +81,8 @@ android {
 
 dependencies {
 
-    implementation(project(":insight-base"))
-    implementation(project(":core:insight-core"))
+    implementation(project(":ii-base"))
+    implementation(project(":core:ii-core"))
     debugImplementation(project(":module:insight-log-debug"))
     releaseImplementation(project(":module:insight-log-release"))
     implementation(libs.multidex)

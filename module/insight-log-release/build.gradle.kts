@@ -34,7 +34,7 @@ android {
 
 dependencies {
 
-    compileOnly(project(":insight-base"))
+    compileOnly(project(":ii-base"))
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

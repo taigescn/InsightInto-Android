@@ -25,7 +25,7 @@ dependencyResolutionManagement {
 
 rootProject.name = "InsightInto-Android"
 include(":app")
-include(":insight-base")
-include("core:insight-core")
+include(":ii-base")
+include("core:ii-core")
 include("module:insight-log-debug")
 include("module:insight-log-release")

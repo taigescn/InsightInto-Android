@@ -34,7 +34,7 @@ android {
 
 dependencies {
 
-    compileOnly(project(":insight-base"))
+    compileOnly(project(":ii-base"))
     compileOnly(libs.gson)
 
     testImplementation(libs.junit)
