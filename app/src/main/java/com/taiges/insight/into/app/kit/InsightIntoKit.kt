@@ -10,12 +10,9 @@ import com.taiges.insight.into.app.App
 import com.taiges.insight.into.app.BuildConfig
 import com.taiges.insight.into.app.common.AccountManager
 import com.taiges.insight.into.app.common.getCurrentKey
-import com.taiges.insight.into.bean.AnonymityId
 import com.taiges.insight.into.bean.PageNativeData
-import com.taiges.insight.into.bean.ReaderParam
-import com.taiges.insight.into.bean.ReaderResult
 import com.taiges.insight.into.common.log.Logger
-import com.taiges.insight.into.core.ReaderServiceManager
+import com.taiges.insight.into.core.ReaderServiceImpl
 import com.taiges.insight.into.log.ApiLogger
 
 /**
@@ -43,7 +40,7 @@ object InsightIntoKit {
             }
 
             override fun getReaderService(insightConfig: InsightConfig): ReaderService {
-                return ReaderServiceManager(insightConfig)
+                return ReaderServiceImpl(insightConfig)
             }
         })
         .build()
@@ -91,7 +88,7 @@ object InsightIntoKit {
     /**
      * 隐私政策协议
      */
-    fun privacyPolicy(agree: Boolean) {
+    fun setPrivacyPolicy(agree: Boolean) {
         insightInto.setPrivacyPolicy(agree)
     }
 
@@ -160,7 +157,7 @@ object InsightIntoKit {
      * @param ecode 事件 Code 名称
      * @param eventProperties 事件业务数据
      */
-    fun event(ecode: String, eventProperties: Map<String, Any>) {
+    fun sendEvent(ecode: String, eventProperties: Map<String, Any>) {
         insightInto.sendEvent(ecode, eventProperties)
     }
 
