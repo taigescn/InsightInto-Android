@@ -6,7 +6,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!--  用于获取定位信息，[定位] -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <!--  用于获附近 WiFi 热点，[WiFi、定位] -->
+    <!--  用于获 WiFi 状态，[WiFi、定位] -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!--  用于获取网络信息信息，[网络、WiFi、定位] -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />

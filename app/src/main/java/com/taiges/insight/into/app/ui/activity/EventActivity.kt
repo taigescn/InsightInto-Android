@@ -92,7 +92,7 @@ class EventActivity : BaseBindingActivity<ActivityEventBinding>() {
             }
 
             AppSpUtil.putString(this, "EcodeKey", ecode)
-            InsightIntoKit.event(ecode, eventPropertiesAdapter.data.toMap())
+            InsightIntoKit.sendEvent(ecode, eventPropertiesAdapter.data.toMap())
         }
 
         binding.forwardH5Btn.setOnClickListener {
@@ -101,7 +101,7 @@ class EventActivity : BaseBindingActivity<ActivityEventBinding>() {
 
         binding.privacyPolicyCb.isChecked = AccountManager.isPrivacyPolicy()
         binding.privacyPolicyCb.setOnCheckedChangeListener { _, isChecked ->
-            InsightIntoKit.privacyPolicy(isChecked)
+            InsightIntoKit.setPrivacyPolicy(isChecked)
             AccountManager.setPrivacyPolicy(isChecked)
         }
 

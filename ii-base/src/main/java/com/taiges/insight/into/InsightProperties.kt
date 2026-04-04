@@ -232,7 +232,7 @@ class InsightProperties(private val insightConfig: InsightConfig) {
     }
 
     /**
-     * 获取 Adid
+     * 获取 Google Adid
      */
     fun getAdid(): String {
         return CommonUtil.getAdidInfo(insightConfig.context).adid

@@ -194,8 +194,8 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         val uploadTimestamp = System.currentTimeMillis()
         val body = mutableMapOf<String, Any?>()
         val event = readerResult.readerParam.event
-//        mode  String  是  采集模式，Code:代码埋点方式,Config:配置方式
-        body["mode"] = "Code"
+//        collectMode  String  是  采集模式，Code:代码埋点方式,Config:配置方式
+        body["collectMode"] = "Code"
 //        ecode  String  是  事件 code
         body["ecode"] = event.ecode
 //        msgId  String  是  事件消息 Id，用于标识事件的唯一性
@@ -235,16 +235,16 @@ internal class ApiService(private val insightConfig: InsightConfig) {
         body["appCode"] = insightConfig.appCode
 //        channelCode String  否   业务渠道编码
         body["channelCode"] = insightConfig.channelCode
-//        mobile  String  否  业务用户手机号码，业务登录后必传
-        body["mobile"] = event.phoneNumber
+//        phoneNumber  String  否  业务用户手机号码，业务登录后必传
+        body["phoneNumber"] = event.phoneNumber
 //        clientLoginSessionId  String  否  终端登录会话 id
         body["clientLoginSessionId"] = event.loginSessionId
 //        eventProperties  Json 对象  否  事件属性，作用域仅为事件，具体参数见数据示例
         body["eventProperties"] = event.properties
 //        sessionProperties  Json 对象  否  会话属性，作用域为整个会话，具体参数见数据示例
         body["sessionProperties"] = insightConfig.properties.getSessionProperties()
-//        stayDuration  int  否  事件触发到事件上传的耗时
-        body["stayDuration"] = uploadTimestamp - event.time
+//        stayDurationTime  int  否  事件触发到事件上传的耗时
+        body["stayDurationTime"] = uploadTimestamp - event.time
 //        isBridge  int  是  是否为桥接事件
         body["isBridge"] = event.isBridge().toInteger()
 //        appName  String  否  应用名称
