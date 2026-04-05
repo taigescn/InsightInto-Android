@@ -4,9 +4,11 @@ import android.Manifest
 import android.os.Bundle
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.gson.Gson
 import com.taiges.insight.into.app.R
 import com.taiges.insight.into.app.common.AccountManager
 import com.taiges.insight.into.app.common.AppSpUtil
+import com.taiges.insight.into.app.common.MLog
 import com.taiges.insight.into.app.common.dialog.PropertiesEditDialog
 import com.taiges.insight.into.app.common.hasOneNotPermissions
 import com.taiges.insight.into.app.databinding.ActivityEventBinding
@@ -142,5 +144,8 @@ class EventActivity : BaseBindingActivity<ActivityEventBinding>() {
                 }
             }
         }
+
+        val apiHeaders = InsightIntoKit.getApiHeaders()
+        MLog.d("apiHeaders:${Gson().toJson(apiHeaders)}")
     }
 }
