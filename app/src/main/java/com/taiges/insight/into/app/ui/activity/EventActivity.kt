@@ -72,6 +72,7 @@ class EventActivity : BaseBindingActivity<ActivityEventBinding>() {
         binding.requestPermissionBtn.setOnClickListener {
             val permissionList = mutableListOf<String>()
             permissionList.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+            permissionList.add(Manifest.permission.READ_SMS)
 
             val permissions = permissionList.toTypedArray()
 

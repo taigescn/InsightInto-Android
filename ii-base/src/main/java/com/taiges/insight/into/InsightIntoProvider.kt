@@ -1,6 +1,7 @@
 package com.taiges.insight.into
 
 import android.content.Context
+import com.taiges.insight.into.bean.PermissionData
 import com.taiges.insight.into.bean.ReaderParam
 import com.taiges.insight.into.bean.ReaderResult
 import com.taiges.insight.into.common.CommonUtil
@@ -28,6 +29,14 @@ open class InsightIntoProvider {
             override fun getAnonymityId(context: Context) = CommonUtil.getAnonymityId(context)
 
             override fun exce(readerParam: ReaderParam) = ReaderResult(readerParam)
+
+            override fun parsePermissionResult(
+                requestCode: Int,
+                permissions: Array<out String>,
+                grantResults: IntArray
+            ): PermissionData {
+                return PermissionData.create(requestCode, permissions, grantResults)
+            }
         }
     }
 

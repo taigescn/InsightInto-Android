@@ -100,8 +100,8 @@ class InsightInto private constructor(private val insightConfig: InsightConfig) 
         requestCode: Int, permissions: Array<out String>, grantResults: IntArray,
     ) {
         tryBiz("receivePermissionsResult exception!") {
-            val permissionData =
-                PermissionData.create(insightConfig.context, requestCode, permissions, grantResults)
+            val permissionData = insightConfig.getReaderService()
+                .parsePermissionResult(requestCode, permissions, grantResults)
             val event =
                 Event(ecode = "PERMISSION", properties = permissionData.eventProperties)
             event.permissionData = permissionData

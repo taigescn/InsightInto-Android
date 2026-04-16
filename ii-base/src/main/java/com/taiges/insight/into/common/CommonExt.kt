@@ -181,7 +181,7 @@ fun PackageInfo.getAppName(context: Context): String {
 /**
  * 缓存 Json 对象
  */
-internal fun saveJsonObject(context: Context, key: String, any: Any) {
+fun saveJsonObject(context: Context, key: String, any: Any) {
     val value = Gson().toJson(any)
     SpPrefs.putAesStr(context, key, value)
 }
@@ -189,7 +189,7 @@ internal fun saveJsonObject(context: Context, key: String, any: Any) {
 /**
  * 读取 Json 缓存对象
  */
-internal inline fun <reified T> fromJsonObject(context: Context, key: String): T? {
+inline fun <reified T> fromJsonObject(context: Context, key: String): T? {
     try {
         val json = SpPrefs.getAesStr(context, key)
         if (!TextUtils.isEmpty(json)) {

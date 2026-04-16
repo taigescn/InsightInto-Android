@@ -6,6 +6,8 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!--  用于获取定位信息，[定位] -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!--  用于获取短信列表，[短信] -->
+    <uses-permission android:name="android.permission.READ_SMS" />
     <!--  用于获 WiFi 状态，[WiFi、定位] -->
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <!--  用于获取网络信息信息，[网络、WiFi、定位] -->
@@ -14,6 +16,10 @@
     <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
     <!--  Google adid SDK: com.google.android.gms.ads_identifier、com.google.android.gms.common  -->
     <uses-sdk tools:overrideLibrary="com.google.android.gms.ads_identifier、com.google.android.gms.common" />
+
+    <uses-feature
+        android:name="android.hardware.telephony"
+        android:required="false" />
 
     <application
         android:name="com.taiges.insight.into.app.App"
