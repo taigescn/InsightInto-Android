@@ -3,6 +3,7 @@ package com.taiges.insight.into.app.common
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
+import android.text.TextUtils
 
 fun Any.getCurrentKey(): String {
     return "${this::class.java.name}@${Integer.toHexString(hashCode())}"
@@ -23,4 +24,8 @@ fun Context.hasPermission(permission: String): Boolean {
     } else {
         true
     }
+}
+
+fun String.checkEmptyStr(): String {
+    return if (TextUtils.isEmpty(this)) "空串" else this
 }

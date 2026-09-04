@@ -48,6 +48,7 @@ class CommonUtil private constructor() {
         private var appPackageInfo: PackageInfo? = null
         private var adidResult = AdidData("", InsightInto.DEF_INT, "")
         private var adidReadTime = 0L
+        private const val ADID_CACHE_READ_TIME = 5 * 60 * 1000
 
         val akx = getAkxStr()
 
@@ -274,9 +275,9 @@ class CommonUtil private constructor() {
          */
         @Synchronized
         fun getAdidInfo(context: Context): AdidData {
+            val currentTime = System.currentTimeMillis()
             try {
-                val currentTime = System.currentTimeMillis()
-                if (currentTime - adidReadTime > 5 * 60 * 1000) {
+                if (currentTime - adidReadTime > ADID_CACHE_READ_TIME) {
                     val idInfo = AdvertisingIdClient.getAdvertisingIdInfo(context)
                     adidResult.isLimitAdTrackingEnabled =
                         idInfo.isLimitAdTrackingEnabled.toInteger()
@@ -301,6 +302,22 @@ class CommonUtil private constructor() {
                 adidResult.error =
                     "Get google adid other exception:${e.message}"
                 ILog.e(adidResult.error, e)
+            }
+
+            if (currentTime - adidReadTime > ADID_CACHE_READ_TIME) {
+                if (TextUtils.isEmpty(adidResult.adid)) {
+                    try {
+                        val adidData = GaidIpcFetcher.getGoogleAdid(context)
+                        adidData?.takeIf { !TextUtils.isEmpty(it.adid) }?.also {
+                            adidReadTime = currentTime
+                            adidResult.adid = it.adid
+                        }
+                    } catch (t: Throwable) {
+                        adidResult.error =
+                            "GaidIpcFetcher google adid exception:${t.message}"
+                        ILog.e(adidResult.error, t)
+                    }
+                }
             }
 
             return adidResult
