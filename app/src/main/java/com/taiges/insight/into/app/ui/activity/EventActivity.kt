@@ -82,6 +82,10 @@ class EventActivity : BaseBindingActivity<ActivityEventBinding>() {
             }
         }
 
+        binding.deviceInfoBtn.setOnClickListener {
+            forword(DeviceInfoActivity::class.java)
+        }
+
         val cacheEcode = AppSpUtil.getString(this, "EcodeKey", "TestAll")
         binding.eventEt.setText(cacheEcode)
         binding.sendEventBtn.setOnClickListener {

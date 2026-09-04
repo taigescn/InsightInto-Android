@@ -9,11 +9,14 @@ import com.taiges.insight.into.ReaderService
 import com.taiges.insight.into.app.App
 import com.taiges.insight.into.app.BuildConfig
 import com.taiges.insight.into.app.common.AccountManager
+import com.taiges.insight.into.app.common.AppApiLogger
 import com.taiges.insight.into.app.common.getCurrentKey
+import com.taiges.insight.into.bean.AdidData
 import com.taiges.insight.into.bean.AnonymityId
 import com.taiges.insight.into.bean.PageNativeData
 import com.taiges.insight.into.bean.ReaderParam
 import com.taiges.insight.into.bean.ReaderResult
+import com.taiges.insight.into.common.CommonUtil
 import com.taiges.insight.into.common.log.Logger
 import com.taiges.insight.into.log.ApiLogger
 
@@ -38,7 +41,7 @@ object InsightIntoKit {
         .setDebug(BuildConfig.DEBUG)
         .setInsightIntoProvider(object : InsightIntoProvider() {
             override fun getLogger(context: Context): Logger {
-                return ApiLogger()
+                return AppApiLogger()
             }
 
             override fun getReaderService(insightConfig: InsightConfig): ReaderService {
@@ -211,5 +214,12 @@ object InsightIntoKit {
      */
     fun removePageWebViewData(pageCurrentKey: String) {
         insightInto.properties.removePageWebViewData(pageCurrentKey)
+    }
+
+    /**
+     * 获取 Google Adid
+     */
+    fun getAdid(): AdidData {
+        return CommonUtil.getAdidInfo(context)
     }
 }

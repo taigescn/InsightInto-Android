@@ -191,7 +191,18 @@
         android:id="@+id/request_permission_btn"
         android:layout_width="60dp"
         android:layout_height="30dp"
+        android:layout_marginEnd="10dp"
         android:text="申请权限"
+        android:textSize="12sp"
+        app:layout_constraintBottom_toBottomOf="@+id/event_properties_tv"
+        app:layout_constraintEnd_toStartOf="@+id/device_info_btn"
+        app:layout_constraintTop_toTopOf="@+id/event_properties_tv" />
+
+    <Button
+        android:id="@+id/device_info_btn"
+        android:layout_width="60dp"
+        android:layout_height="30dp"
+        android:text="设备信息"
         android:textSize="12sp"
         app:layout_constraintBottom_toBottomOf="@+id/event_properties_tv"
         app:layout_constraintEnd_toEndOf="parent"
