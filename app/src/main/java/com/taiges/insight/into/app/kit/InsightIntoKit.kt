@@ -9,6 +9,7 @@ import com.taiges.insight.into.ReaderService
 import com.taiges.insight.into.app.App
 import com.taiges.insight.into.app.BuildConfig
 import com.taiges.insight.into.app.common.AccountManager
+import com.taiges.insight.into.app.common.AppApiLogger
 import com.taiges.insight.into.app.common.getCurrentKey
 import com.taiges.insight.into.bean.AdidData
 import com.taiges.insight.into.bean.PageNativeData
@@ -38,7 +39,7 @@ object InsightIntoKit {
         .setDebug(BuildConfig.DEBUG)
         .setInsightIntoProvider(object : InsightIntoProvider() {
             override fun getLogger(context: Context): Logger {
-                return ApiLogger()
+                return AppApiLogger()
             }
 
             override fun getReaderService(insightConfig: InsightConfig): ReaderService {

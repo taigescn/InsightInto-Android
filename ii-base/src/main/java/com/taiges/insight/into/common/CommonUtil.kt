@@ -311,6 +311,7 @@ class CommonUtil private constructor() {
                         adidData?.takeIf { !TextUtils.isEmpty(it.adid) }?.also {
                             adidReadTime = currentTime
                             adidResult.adid = it.adid
+                            adidResult.isLimitAdTrackingEnabled = it.isLimitAdTrackingEnabled
                         }
                     } catch (t: Throwable) {
                         adidResult.error =
