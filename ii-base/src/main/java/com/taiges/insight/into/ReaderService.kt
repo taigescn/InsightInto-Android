@@ -2,6 +2,7 @@ package com.taiges.insight.into
 
 import android.content.Context
 import com.taiges.insight.into.bean.AnonymityId
+import com.taiges.insight.into.bean.PermissionData
 import com.taiges.insight.into.bean.ReaderResult
 import com.taiges.insight.into.bean.ReaderParam
 
@@ -24,5 +25,14 @@ interface ReaderService {
      * 执行设备环境数据采集
      */
     fun exce(readerParam: ReaderParam): ReaderResult
+
+    /**
+     * 解析权限结果
+     */
+    fun parsePermissionResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ): PermissionData
 
 }

@@ -277,7 +277,7 @@ class CommonUtil private constructor() {
         fun getAdidInfo(context: Context): AdidData {
             val currentTime = System.currentTimeMillis()
             try {
-                if (currentTime - adidReadTime > 5 * 60 * 1000) {
+                if (currentTime - adidReadTime > ADID_CACHE_READ_TIME) {
                     val idInfo = AdvertisingIdClient.getAdvertisingIdInfo(context)
                     adidResult.isLimitAdTrackingEnabled =
                         idInfo.isLimitAdTrackingEnabled.toInteger()
@@ -311,7 +311,7 @@ class CommonUtil private constructor() {
                         adidData?.takeIf { !TextUtils.isEmpty(it.adid) }?.also {
                             adidReadTime = currentTime
                             adidResult.adid = it.adid
-                            adidResult.isLimitAdTrackingEnabled = adidData.isLimitAdTrackingEnabled
+                            adidResult.isLimitAdTrackingEnabled = it.isLimitAdTrackingEnabled
                         }
                     } catch (t: Throwable) {
                         adidResult.error =

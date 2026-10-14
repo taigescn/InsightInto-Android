@@ -213,16 +213,12 @@ internal class ApiService(private val insightConfig: InsightConfig) {
 //        uploadTimestamp  String  是  采集时间戳
         body["uploadTimestamp"] = uploadTimestamp
         var clientCalibrationtTimestamp = DEF_L
-        var clientCalibrationtTime = ""
         if (serverTimestamp != DEF_L && elapsedRealtime != DEF_L) {
             clientCalibrationtTimestamp =
                 serverTimestamp - (elapsedRealtime - event.elapsedRealtime)
-            clientCalibrationtTime = clientCalibrationtTimestamp.formatTime()
         }
-//        clientCalibrationtTimestamp  String  是  终端校准时间(yyyy-MM-dd HH:mm:ss.SSS)
+//        clientCalibrationtTimestamp  String  是  终端校准时间戳
         body["clientCalibrationtTimestamp"] = clientCalibrationtTimestamp
-//        clientCalibrationtTime  String  是  终端校准时间戳
-        body["clientCalibrationtTime"] = clientCalibrationtTime
 //        collectorItems  Json 数组  否  采集项列表 Json 数组，具体参数见数据示例
         body["collectorItems"] = readerResult.readerBaseInfo.readerItems
 //        userId  String  否  业务用户 Id，业务登录后必传

@@ -31,6 +31,10 @@
 -keepclassmembers,allowobfuscation class * {
   @com.google.gson.annotations.SerializedName <fields>;
 }
--keep,allowobfuscation,allowshrinking class com.google.gson.reflect.TypeToken
--keep,allowobfuscation,allowshrinking class * extends com.google.gson.reflect.TypeToken
+# Keep class TypeToken (respectively its generic signature)
+-keep class com.google.gson.reflect.TypeToken { *; }
+
+# Keep any (anonymous) classes extending TypeToken
+-keep class * extends com.google.gson.reflect.TypeToken
+
 ##---------------End: proguard configuration for Gson  ----------

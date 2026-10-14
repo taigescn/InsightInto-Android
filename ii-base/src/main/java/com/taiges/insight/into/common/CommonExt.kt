@@ -32,7 +32,7 @@ import kotlin.concurrent.thread
 /**
  * SHA-256摘要
  */
-internal fun String.toSha256(): String {
+fun String.toSha256(): String {
     val messageDigest: MessageDigest
     var encdeStr = ""
     try {
@@ -51,7 +51,7 @@ internal fun String.toSha256(): String {
  * 将byte转为16进制
  * @return
  */
-internal fun ByteArray.toHex(): String {
+fun ByteArray.toHex(): String {
     val sb = StringBuilder()
     //转成16进制
     this.forEach {
@@ -181,7 +181,7 @@ fun PackageInfo.getAppName(context: Context): String {
 /**
  * 缓存 Json 对象
  */
-internal fun saveJsonObject(context: Context, key: String, any: Any) {
+fun saveJsonObject(context: Context, key: String, any: Any) {
     val value = Gson().toJson(any)
     SpPrefs.putAesStr(context, key, value)
 }
@@ -189,7 +189,7 @@ internal fun saveJsonObject(context: Context, key: String, any: Any) {
 /**
  * 读取 Json 缓存对象
  */
-internal inline fun <reified T> fromJsonObject(context: Context, key: String): T? {
+inline fun <reified T> fromJsonObject(context: Context, key: String): T? {
     try {
         val json = SpPrefs.getAesStr(context, key)
         if (!TextUtils.isEmpty(json)) {
@@ -204,7 +204,7 @@ internal inline fun <reified T> fromJsonObject(context: Context, key: String): T
 /**
  * 尝试关闭输出流
  */
-internal fun OutputStream.tryClose() {
+fun OutputStream.tryClose() {
     tryI {
         close()
     }
@@ -213,7 +213,7 @@ internal fun OutputStream.tryClose() {
 /**
  * 尝试关闭输入流
  */
-internal fun InputStream.tryClose() {
+fun InputStream.tryClose() {
     tryI {
         close()
     }
@@ -222,7 +222,7 @@ internal fun InputStream.tryClose() {
 /**
  * 尝试关闭 Http 连接
  */
-internal fun HttpURLConnection.tryDisconnect(){
+fun HttpURLConnection.tryDisconnect(){
     tryI {
         disconnect()
     }
@@ -252,7 +252,7 @@ fun Cursor.getStringData(columnName: String): String {
 /**
  * 主线程运行
  */
-internal fun threadOnMain(block: () -> Unit) {
+fun threadOnMain(block: () -> Unit) {
     if (Looper.getMainLooper() == Looper.myLooper()) {
         thread {
             block()
