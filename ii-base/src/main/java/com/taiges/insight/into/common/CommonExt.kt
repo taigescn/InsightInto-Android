@@ -231,21 +231,21 @@ internal fun HttpURLConnection.tryDisconnect(){
 /**
  * Cursor 获取对应字段 Int 类型数据
  */
-internal fun Cursor.getIntData(columnName: String): Int? {
+fun Cursor.getIntData(columnName: String): Int? {
     return getIntOrNull(getColumnIndex(columnName))
 }
 
 /**
  * Cursor 获取对应字段 Long 类型数据
  */
-internal fun Cursor.getLongData(columnName: String): Long? {
+fun Cursor.getLongData(columnName: String): Long? {
     return getLongOrNull(getColumnIndex(columnName))
 }
 
 /**
  * Cursor 获取对应字段字符串类型数据
  */
-internal fun Cursor.getStringData(columnName: String): String {
+fun Cursor.getStringData(columnName: String): String {
     return getStringOrNull(getColumnIndex(columnName)) ?: ""
 }
 
