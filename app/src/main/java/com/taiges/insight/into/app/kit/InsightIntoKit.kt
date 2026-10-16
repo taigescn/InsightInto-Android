@@ -11,15 +11,11 @@ import com.taiges.insight.into.app.BuildConfig
 import com.taiges.insight.into.app.common.AccountManager
 import com.taiges.insight.into.app.common.AppApiLogger
 import com.taiges.insight.into.app.common.getCurrentKey
-import com.taiges.insight.into.bean.AnonymityId
 import com.taiges.insight.into.bean.AdidData
 import com.taiges.insight.into.bean.PageNativeData
-import com.taiges.insight.into.bean.PermissionData
-import com.taiges.insight.into.bean.ReaderParam
-import com.taiges.insight.into.bean.ReaderResult
 import com.taiges.insight.into.common.CommonUtil
 import com.taiges.insight.into.common.log.Logger
-import com.taiges.insight.into.log.ApiLogger
+import com.taiges.insight.into.core.ReaderServiceImpl
 
 /**
  * InsightInto 核心封装类
@@ -46,44 +42,7 @@ object InsightIntoKit {
             }
 
             override fun getReaderService(insightConfig: InsightConfig): ReaderService {
-                //自定义额外采集数据服务
-                return object : ReaderService {
-                    /**
-                     * 自定义支持的采集项，SDK 会根据支持的采集项进行创建事件配置，详见 ApiService.parseServerData 方法
-                     */
-                    override fun supportReaderItems(): List<String> {
-                        return listOf("Location")
-                    }
-
-                    /**
-                     * 可根据自身业务创建设备匿名标识符或返回现有业务已有的标识符，创建时间和创建规则根据业务自身情况设定
-                     */
-                    override fun getAnonymityId(context: Context): AnonymityId {
-                        return AnonymityId(
-                            "xxxx-xxxx-xxx",
-                            createTime = System.currentTimeMillis(),
-                            createAlgorithm = 0
-                        )
-                    }
-
-                    /**
-                     * 如果有额外的采集数据，必须实现此方法，该方法会传入触发的事件以及采集配置，根据自身业务规则判断采集数据业务逻辑
-                     */
-                    override fun exce(readerParam: ReaderParam): ReaderResult {
-                        return ReaderResult(readerParam)
-                    }
-
-                    /**
-                     * 针对弹窗授权解析选择的结果
-                     */
-                    override fun parsePermissionResult(
-                        requestCode: Int,
-                        permissions: Array<out String>,
-                        grantResults: IntArray
-                    ): PermissionData {
-                        return PermissionData.create(requestCode, permissions, grantResults)
-                    }
-                }
+                return ReaderServiceImpl(insightConfig)
             }
         })
         .build()
